@@ -8,6 +8,7 @@ import { Lightbulb } from "lucide-react"
 interface ProblemDetailProps {
   problem: Problem
 }
+//Problem Detail
 
 export function ProblemDetail({ problem }: ProblemDetailProps) {
   const difficultyColors = {
