@@ -1,4 +1,4 @@
-// Fallback static data for when Supabase connection fails
+// This is Fallback static data for when Supabase connection fails
 export const staticProblems = [
   {
     id: 1,
