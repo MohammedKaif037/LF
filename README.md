@@ -1,71 +1,79 @@
-# JavaMaster - Java Coding Problems Platform
+# JavaMaster – Java Coding Problems Platform
 
-JavaMaster is an interactive platform for learning Java programming through 100 carefully curated coding problems. The platform features a sleek, modern UI with a dark theme and provides an interactive coding environment where users can write, run, and test Java code directly in the browser.
+JavaMaster is an interactive platform designed for mastering Java programming through a curated set of 100 coding challenges. The platform boasts a sleek, modern UI with a dark theme, offering users a seamless experience to write, run, and test Java code directly in the browser.
 
-## Features
+---
 
-- **Interactive Problem Solving**: Write and execute Java code directly in your browser
-- **Structured Learning Path**: Progress from basic to advanced Java concepts
-- **Problem Categories**: Problems organized by difficulty and concept
-- **Code Execution**: Real-time feedback on your code
-- **Test Cases**: Validate your solutions against predefined test cases
-- **Solution Hints**: Get help when you're stuck
-- **Responsive Design**: Works on desktop and mobile devices
+## 🚀 Features
 
-## Tech Stack
+- **🧑‍💻 Interactive Problem Solving:** Write and execute Java code directly in your browser
+- **📚 Structured Learning Path:** Progress from basic to advanced Java concepts
+- **🗂️ Problem Categories:** Problems organized by difficulty and concept
+- **⚡ Code Execution:** Real-time feedback on your code
+- **🧪 Test Cases:** Validate your solutions against predefined test cases
+- **💡 Solution Hints:** Get help when you're stuck
+- **📱 Responsive Design:** Works on desktop and mobile devices
 
-- **Frontend**: Next.js 14, React, Tailwind CSS
-- **UI Components**: shadcn/ui
-- **Database**: Supabase
-- **Styling**: Tailwind CSS with custom theme
-- **Icons**: Lucide React
+---
 
-## Getting Started
+## 🛠️ Tech Stack
+
+| Layer         | Technology                       | Symbol |
+|---------------|----------------------------------|--------|
+| **Frontend**  | Next.js 14, React, Tailwind CSS  | ⚛️     |
+| **UI**        | shadcn/ui                        | 🎨     |
+| **Database**  | Supabase                         | 🗄️     |
+| **Styling**   | Tailwind CSS with custom theme   | 🎨     |
+| **Icons**     | Lucide React                     | 🖼️     |
+
+---
+
+## 🏁 Getting Started
 
 ### Prerequisites
 
-- Node.js 18.x or higher
-- npm or yarn
-- Supabase account
+- 🟢 Node.js 18.x or higher
+- 📦 npm or yarn
+- 🗝️ Supabase account
 
 ### Installation
 
-1. Clone the repository:
-   \`\`\`bash
+1. **Clone the repository:**
+   ```bash
    git clone https://github.com/yourusername/java-master.git
    cd java-master
-   \`\`\`
+   ```
 
-2. Install dependencies:
-   \`\`\`bash
+2. **Install dependencies:**
+   ```bash
    npm install
    # or
    yarn install
-   \`\`\`
+   ```
 
-3. Set up environment variables:
-   Create a `.env.local` file in the root directory with the following variables:
-   \`\`\`
+3. **Set up environment variables:**
+   Create a `.env.local` file in the root directory with:
+   ```
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   \`\`\`
+   ```
 
-4. Run the development server:
-   \`\`\`bash
+4. **Run the development server:**
+   ```bash
    npm run dev
    # or
    yarn dev
-   \`\`\`
+   ```
 
-5. Open [http://localhost:3000](http://localhost:3000) in your browser to see the application.
+5. **Open** [http://localhost:3000](http://localhost:3000) **in your browser.**
 
-## Database Setup
+---
+
+## 🗄️ Database Setup
 
 ### Supabase Schema
 
-Create a `problems` table in your Supabase database with the following schema:
-
-\`\`\`sql
+```sql
 create table problems (
   id serial primary key,
   title text not null,
@@ -77,13 +85,11 @@ create table problems (
   hints text[],
   test_cases jsonb not null
 );
-\`\`\`
+```
 
 ### Sample Data
 
-Insert sample problems into your Supabase database:
-
-\`\`\`sql
+```sql
 INSERT INTO problems (title, description, difficulty, concepts, starter_code, solution, hints, test_cases)
 VALUES 
 (
@@ -91,35 +97,27 @@ VALUES
   'Write a Java program that prints "Hello, World!" to the console.',
   'Easy',
   ARRAY['Basic Syntax', 'Output'],
-  'public class Solution {
-  public static void main(String[] args) {
-    // Your code here
-    
-  }
-}',
-  'public class Solution {
-  public static void main(String[] args) {
-    System.out.println("Hello, World!");
-  }
-}',
+  'public class Solution {\n  public static void main(String[] args) {\n    // Your code here\n  }\n}',
+  'public class Solution {\n  public static void main(String[] args) {\n    System.out.println("Hello, World!");\n  }\n}',
   ARRAY['Remember to use System.out.println() to print to the console.'],
   '[{"input": "", "expected_output": "Hello, World!"}]'
 );
-\`\`\`
+```
 
-## Deployment
+---
+
+## 🚀 Deployment
 
 ### Deploy on Vercel
 
-The easiest way to deploy the application is to use the [Vercel Platform](https://vercel.com).
+- Push your code to a GitHub repository
+- Import the project into Vercel
+- Add your environment variables
+- Deploy
 
-1. Push your code to a GitHub repository
-2. Import the project into Vercel
-3. Add your environment variables
-4. Deploy
+---
 
-
-## Project Structure
+## 🗂️ Project Structure
 
 ```
 java-master/
@@ -137,30 +135,52 @@ java-master/
 └── ...                   # Configuration files
 ```
 
+---
 
+## 🎨 Customization
 
-## Customization
+- **Theme:** Adjust the color scheme in `tailwind.config.ts` (currently a dark background with deep purple accents).
+- **Adding Problems:** Add new problems to the Supabase database following the schema above.
 
-### Theme
+---
 
-The color scheme can be customized in the `tailwind.config.ts` file. The current theme uses a dark background with deep purple accents.
+## 🤝 Contributing
 
-### Adding Problems
+Contributions are welcome! Please submit a Pull Request.
 
-Add new problems to the Supabase database following the schema defined above.
+---
 
-## Contributing
+## 📄 License
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+MIT License – see the LICENSE file for details.
 
-## License
+---
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 🙏 Acknowledgements
 
-## Acknowledgements
+- Next.js
+- Tailwind CSS
+- shadcn/ui
+- Supabase
+- Lucide Icons
 
-- [Next.js](https://nextjs.org/)
-- [Tailwind CSS](https://tailwindcss.com/)
-- [shadcn/ui](https://ui.shadcn.com/)
-- [Supabase](https://supabase.io/)
-- [Lucide Icons](https://lucide.dev/)
+---
+
+> #JavaMaster #Java #NextJS #TailwindCSS #Supabase #CodingPlatform #TechStack
+
+---
+
+**Tip:** Use Lucide React icons (🧑‍💻, ⚡, 📚, 🗂️, 🎨, 🗄️) throughout your UI for a modern, beautiful tech feel, perfectly matching your stack and dark theme[1][4][6].
+
+Citations:
+[1] https://nextjs.org
+[2] https://www.reddit.com/r/learnprogramming/comments/15uthoe/what_tech_stack_is_used_in_workplace_is_next_js/
+[3] https://www.youtube.com/watch?v=hxuDbiO76L4
+[4] https://tailwindcss.com
+[5] https://www.youtube.com/watch?v=69vpmZgDeN8
+[6] https://www.linkedin.com/posts/hamza-mellahi_techstack-webdev-nextjs-activity-7295003743933091840-w3oa
+[7] https://nextjs.org/learn
+[8] https://nextjstemplates.com/blog/admin-dashboard-templates
+
+---
+Answer from Perplexity: pplx.ai/share
