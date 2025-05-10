@@ -281,39 +281,38 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
                           </div>
                         </TabsContent>
                         <TabsContent value="test-cases">
-                          <div className="space-y-2">
-                            {problem.test_cases && problem.test_cases.length > 0 ? (
-                              problem.test_cases.map((testCase: any, index: number) => (
-                                <div key={index} className="border rounded-md p-3">
-                                  <div className="flex justify-between text-sm mb-2">
-                                    <span className="font-medium">Test Case #{index + 1}</span>
-                                    <span className="text-muted-foreground">Not run</span>
-                                  </div>
-                                  <div className="grid grid-cols-2 gap-2 text-xs">
-                                    <div>
-                                      <p className="font-medium mb-1">Input:</p>
-                                      <pre className="bg-secondary rounded-md p-2 overflow-x-auto">
-                                        {testCase.input || "(empty)"}
-                                      </pre>
-                                    </div>
-                                    <div>
-                                      <p className="font-medium mb-1">Expected Output:</p>
-                                      <pre className="bg-secondary rounded-md p-2 overflow-x-auto">
-                                        {testCase.expected_output}
-                                      </pre>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))
-                            ) : (
-                              <div className="flex items-center justify-center p-4 text-muted-foreground">
-                                <AlertTriangle className="h-4 w-4 mr-2" />
-                                <span>No test cases available</span>
-                              </div>
-                            )}
-                          </div>
-                        </TabsContent>
-                      </Tabs>
+  <div className="space-y-2">
+    {problem.test_cases && problem.test_cases.length > 0 ? (
+      problem.test_cases.map((testCase: any, index: number) => (
+        <div key={index} className="border rounded-md p-3">
+          <div className="flex justify-between text-sm mb-2">
+            <span className="font-medium">Test Case #{index + 1}</span>
+            <span className="text-muted-foreground">Not run</span>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <p className="font-medium mb-1">Input:</p>
+              <pre className="bg-secondary rounded-md p-2 overflow-x-auto">
+                {testCase.input || "(empty)"}
+              </pre>
+            </div>
+            <div>
+              <p className="font-medium mb-1">Expected Output:</p>
+              <pre className="bg-secondary rounded-md p-2 overflow-x-auto">
+                {testCase.expected_output}
+              </pre>
+            </div>
+          </div>
+        </div>
+      ))
+    ) : (
+      <div className="text-center py-4 text-muted-foreground">
+        No test cases available for this problem
+      </div>
+    )}
+  </div>
+</TabsContent>
+                                           </Tabs>
                     </CardContent>
                   </Card>
                 </div>
