@@ -2,6 +2,7 @@ import { ProblemList } from "@/components/problem-list"
 import { ProblemSidebar } from "@/components/problem-sidebar"
 import { SidebarProvider } from "@/components/ui/sidebar"
 
+//Problems Page Skeleton 
 export default function ProblemsPage() {
   return (
     <SidebarProvider>
