@@ -120,7 +120,7 @@ The easiest way to deploy the application is to use the [Vercel Platform](https:
 
 ## Project Structure
 
-\`\`\`
+
 java-master/
 ├── app/                  # Next.js app directory
 │   ├── api/              # API routes
@@ -134,7 +134,7 @@ java-master/
 │   └── supabase.ts       # Supabase client and types
 ├── public/               # Static assets
 └── ...                   # Configuration files
-\`\`\`
+
 
 ## Customization
 
