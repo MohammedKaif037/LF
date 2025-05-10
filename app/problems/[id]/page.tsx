@@ -10,7 +10,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getProblem } from "@/lib/supabase"
-import { AlertCircle, ArrowLeft, CheckCircle, XCircle } from "lucide-react"
+import { AlertCircle, AlertTriangle, ArrowLeft, CheckCircle, XCircle } from "lucide-react"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
@@ -26,6 +26,7 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
     executionTime?: string
   } | null>(null)
   const [executing, setExecuting] = useState(false)
+  const [pageError, setPageError] = useState<Error | null>(null)
 
   useEffect(() => {
     async function loadProblem() {
@@ -37,6 +38,7 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
         }
       } catch (error) {
         console.error(`Failed to load problem ${problemId}:`, error)
+        setPageError(error instanceof Error ? error : new Error(String(error)))
       } finally {
         setLoading(false)
       }
@@ -44,6 +46,43 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
 
     loadProblem()
   }, [problemId])
+
+  // Error boundary effect to catch any uncaught errors
+  useEffect(() => {
+    const originalConsoleError = console.error;
+    
+    // Override console.error to catch React errors
+    console.error = (...args) => {
+      originalConsoleError.apply(console, args);
+      
+      // Check if this is a React error
+      const errorString = args.join(' ');
+      if (errorString.includes('React') || errorString.includes('Error:')) {
+        setPageError(new Error(errorString));
+      }
+    };
+
+    // Add a global error handler
+    const handleError = (event: ErrorEvent) => {
+      event.preventDefault();
+      setPageError(event.error || new Error('An unknown error occurred'));
+    };
+
+    // Add a global unhandled promise rejection handler
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      event.preventDefault();
+      setPageError(event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
+    };
+
+    window.addEventListener('error', handleError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      console.error = originalConsoleError;
+      window.removeEventListener('error', handleError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
 
   const executeCode = async (codeToExecute: string) => {
     setExecuting(true)
@@ -78,7 +117,7 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
       console.error("Error executing code:", error)
       setExecutionResult({
         success: false,
-        error: "An unexpected error occurred while executing the code",
+        error: error instanceof Error ? error.message : "An unexpected error occurred while executing the code",
       })
     } finally {
       setExecuting(false)
@@ -91,6 +130,42 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
       setOutput(null)
       setExecutionResult(null)
     }
+  }
+
+  const dismissError = () => {
+    setPageError(null);
+  }
+
+  // If there's a page-level error, show it prominently
+  if (pageError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <Alert className="mb-6 max-w-2xl w-full border-red-500">
+          <AlertCircle className="h-5 w-5 text-red-500" />
+          <AlertTitle className="text-red-500">An error occurred</AlertTitle>
+          <AlertDescription className="mt-2">
+            <div className="bg-red-50 rounded p-3 text-red-800 font-mono text-sm mb-4 overflow-auto max-h-40">
+              {pageError.name}: {pageError.message}
+              {pageError.stack && (
+                <pre className="mt-2 text-xs overflow-auto">
+                  {pageError.stack}
+                </pre>
+              )}
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={dismissError} variant="outline" className="mr-2">
+                Dismiss
+              </Button>
+              <Link href="/problems">
+                <Button>
+                  Return to Problems List
+                </Button>
+              </Link>
+            </div>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
   }
 
   return (
@@ -207,28 +282,35 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
                         </TabsContent>
                         <TabsContent value="test-cases">
                           <div className="space-y-2">
-                            {problem.test_cases.map((testCase: any, index: number) => (
-                              <div key={index} className="border rounded-md p-3">
-                                <div className="flex justify-between text-sm mb-2">
-                                  <span className="font-medium">Test Case #{index + 1}</span>
-                                  <span className="text-muted-foreground">Not run</span>
-                                </div>
-                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                  <div>
-                                    <p className="font-medium mb-1">Input:</p>
-                                    <pre className="bg-secondary rounded-md p-2 overflow-x-auto">
-                                      {testCase.input || "(empty)"}
-                                    </pre>
+                            {problem.test_cases && problem.test_cases.length > 0 ? (
+                              problem.test_cases.map((testCase: any, index: number) => (
+                                <div key={index} className="border rounded-md p-3">
+                                  <div className="flex justify-between text-sm mb-2">
+                                    <span className="font-medium">Test Case #{index + 1}</span>
+                                    <span className="text-muted-foreground">Not run</span>
                                   </div>
-                                  <div>
-                                    <p className="font-medium mb-1">Expected Output:</p>
-                                    <pre className="bg-secondary rounded-md p-2 overflow-x-auto">
-                                      {testCase.expected_output}
-                                    </pre>
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div>
+                                      <p className="font-medium mb-1">Input:</p>
+                                      <pre className="bg-secondary rounded-md p-2 overflow-x-auto">
+                                        {testCase.input || "(empty)"}
+                                      </pre>
+                                    </div>
+                                    <div>
+                                      <p className="font-medium mb-1">Expected Output:</p>
+                                      <pre className="bg-secondary rounded-md p-2 overflow-x-auto">
+                                        {testCase.expected_output}
+                                      </pre>
+                                    </div>
                                   </div>
                                 </div>
+                              ))
+                            ) : (
+                              <div className="flex items-center justify-center p-4 text-muted-foreground">
+                                <AlertTriangle className="h-4 w-4 mr-2" />
+                                <span>No test cases available</span>
                               </div>
-                            ))}
+                            )}
                           </div>
                         </TabsContent>
                       </Tabs>
@@ -255,4 +337,4 @@ export default function ProblemPage({ params }: { params: { id: string } }) {
       </div>
     </SidebarProvider>
   )
-}
+                }
