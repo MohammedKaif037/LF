@@ -8,6 +8,7 @@ interface CodeEditorProps {
   onChange?: (value: string) => void
   onExecute?: (code: string) => Promise<void>
 }
+//Editor
 
 export function CodeEditor({ defaultValue = "", onChange, onExecute }: CodeEditorProps) {
   const [mounted, setMounted] = useState(false)
