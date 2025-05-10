@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Code, Cpu, GraduationCap, Terminal } from "lucide-react"
-
+//Homepage 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
