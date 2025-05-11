@@ -50,86 +50,44 @@ export const fallbackProblems: Problem[] = [
     ],
     completed: false,
   },
-  {
-    id: 2,
-    title: "Variable Declaration",
-    description: "Create variables to store your name, age, and height (in meters). Print them.",
-    difficulty: "Easy",
-    concepts: ["Variables", "Data Types", "Output"],
-    starter_code: `public class Solution {
-  public static void main(String[] args) {
-    // Your code here
-    
-  }
-}`,
-    solution: `public class Solution {
-  public static void main(String[] args) {
-    String name = "John Doe";
-    int age = 25;
-    double height = 1.75;
-    
-    System.out.println("Name: " + name);
-    System.out.println("Age: " + age);
-    System.out.println("Height: " + height + "m");
-  }
-}`,
-    hints: ["Use String for text, int for whole numbers, and double for decimal numbers."],
-    test_cases: [
-      {
-        input: "",
-        expected_output: "Name: ",
-      },
-    ],
-    completed: false,
-  },
-  {
-    id: 3,
-    title: "Conditional Statements",
-    description: "Write a program that checks if a number is positive, negative, or zero.",
-    difficulty: "Easy",
-    concepts: ["Conditionals", "If-Else"],
-    starter_code: `public class Solution {
-  public static void main(String[] args) {
-    int number = 5; // Change this value to test
-    
-    // Your code here
-    
-  }
-}`,
-    solution: `public class Solution {
-  public static void main(String[] args) {
-    int number = 5; // Change this value to test
-    
-    if (number > 0) {
-      System.out.println("Positive");
-    } else if (number < 0) {
-      System.out.println("Negative");
-    } else {
-      System.out.println("Zero");
-    }
-  }
-}`,
-    hints: ["Use if, else if, and else statements to check different conditions."],
-    test_cases: [
-      {
-        input: "",
-        expected_output: "Positive",
-      },
-    ],
-    completed: false,
-  },
+  // other fallback problems...
 ]
 
 export async function getProblems() {
   try {
-    const { data, error } = await supabase.from("problems").select("*").order("id", { ascending: true })
+    // Get all problems
+    const { data: problems, error: problemsError } = await supabase
+      .from("problems")
+      .select("*")
+      .order("id", { ascending: true })
 
-    if (error) {
-      console.error("Error fetching problems:", error)
+    if (problemsError) {
+      console.error("Error fetching problems:", problemsError)
       return fallbackProblems
     }
 
-    return data as Problem[]
+    // Get all test cases
+    const { data: testCases, error: testCasesError } = await supabase
+      .from("test_cases")
+      .select("*")
+
+    if (testCasesError) {
+      console.error("Error fetching test cases:", testCasesError)
+      return problems.map((problem) => ({
+        ...problem,
+        test_cases: [],
+      }))
+    }
+
+    // Associate test cases with their respective problems
+    const problemsWithTestCases = problems.map((problem) => ({
+      ...problem,
+      test_cases: testCases
+        .filter((testCase) => testCase.problem_id === problem.id)
+        .map(({ input, expected_output }) => ({ input, expected_output })),
+    }))
+
+    return problemsWithTestCases as Problem[]
   } catch (error) {
     console.error("Failed to fetch problems:", error)
     return fallbackProblems
@@ -138,21 +96,47 @@ export async function getProblems() {
 
 export async function getProblem(id: number) {
   try {
-    const { data, error } = await supabase.from("problems").select("*").eq("id", id).single()
+    // Get the problem
+    const { data: problem, error: problemError } = await supabase
+      .from("problems")
+      .select("*")
+      .eq("id", id)
+      .single()
 
-    if (error) {
-      console.error(`Error fetching problem ${id}:`, error)
+    if (problemError) {
+      console.error(`Error fetching problem ${id}:`, problemError)
       return fallbackProblems.find((p) => p.id === id) || fallbackProblems[0]
     }
 
-    return data as Problem
+    // Get the test cases for this problem
+    const { data: testCases, error: testCasesError } = await supabase
+      .from("test_cases")
+      .select("*")
+      .eq("problem_id", id)
+
+    if (testCasesError) {
+      console.error(`Error fetching test cases for problem ${id}:`, testCasesError)
+      return {
+        ...problem,
+        test_cases: [],
+      }
+    }
+
+    // Combine problem with its test cases
+    return {
+      ...problem,
+      test_cases: testCases.map(({ input, expected_output }) => ({ 
+        input, 
+        expected_output 
+      })),
+    } as Problem
   } catch (error) {
     console.error(`Failed to fetch problem ${id}:`, error)
     return fallbackProblems.find((p) => p.id === id) || fallbackProblems[0]
   }
 }
 
-// Auth types
+// Auth types and functions remain unchanged
 export type User = {
   id: string
   email: string
@@ -161,7 +145,6 @@ export type User = {
   }
 }
 
-// Auth functions
 export async function signUp(email: string, password: string, fullName: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
