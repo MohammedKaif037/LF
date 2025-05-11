@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Code, Cpu, GraduationCap, Terminal } from "lucide-react"
+import { UserNav } from "@/components/user-nav"
 //Homepage 
 export default function Home() {
   return (
