@@ -5,11 +5,24 @@ import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { staticProblems } from "@/lib/static-data"
 import type { Problem } from "@/lib/supabase"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Search, Code } from "lucide-react"
 
@@ -18,6 +31,7 @@ export function ProblemList() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
   const [difficultyFilter, setDifficultyFilter] = useState("all")
+  const [categoryFilter, setCategoryFilter] = useState("all")
 
   useEffect(() => {
     async function fetchProblems() {
@@ -47,8 +61,9 @@ export function ProblemList() {
       problem.concept.toLowerCase().includes(searchQuery.toLowerCase())
 
     const matchesDifficulty = difficultyFilter === "all" || problem.difficulty === difficultyFilter
+    const matchesCategory = categoryFilter === "all" || problem.category === categoryFilter
 
-    return matchesSearch && matchesDifficulty
+    return matchesSearch && matchesDifficulty && matchesCategory
   })
 
   const getDifficultyColor = (difficulty: string) => {
@@ -92,6 +107,20 @@ export function ProblemList() {
               <SelectItem value="hard">Hard</SelectItem>
             </SelectContent>
           </Select>
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[240px]">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              <SelectItem value="Basic Syntax and Data Types">Basic Syntax and Data Types</SelectItem>
+              <SelectItem value="Control Structures">Control Structures</SelectItem>
+              <SelectItem value="Functions and Methods">Functions and Methods</SelectItem>
+              <SelectItem value="Arrays and Lists">Arrays and Lists</SelectItem>
+              <SelectItem value="String Manipulation">String Manipulation</SelectItem>
+              {/* Add more categories as needed */}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -125,6 +154,7 @@ export function ProblemList() {
                   <Badge className={getDifficultyColor(problem.difficulty)}>{problem.difficulty}</Badge>
                 </div>
                 <CardDescription>{problem.concept}</CardDescription>
+                <p className="text-xs text-muted-foreground">Category: {problem.category}</p>
               </CardHeader>
               <CardContent className="flex-grow">
                 <p className="text-sm line-clamp-3">{problem.description}</p>
