@@ -20,12 +20,12 @@ export async function POST(request: NextRequest) {
 
     if (code.includes("System.out.println")) {
       // Extract what's being printed
-      const printMatches = code.match(/System\.out\.println\("(.*)"\)/g)
+      const printMatches = code.match(/System\.out\.println$$"(.*)"$$/g)
       if (printMatches && printMatches.length > 0) {
         // Extract content from all println statements
         output = printMatches
           .map((match) => {
-            const content = match.match(/System\.out\.println\("(.*)"\)/)
+            const content = match.match(/System\.out\.println$$"(.*)"$$/)
             return content ? content[1] : ""
           })
           .join("\n")
