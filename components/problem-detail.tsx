@@ -52,8 +52,8 @@ export function ProblemDetail({ problem }: ProblemDetailProps) {
           <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
             <div>
               <CardTitle className="text-2xl">{problem.title}</CardTitle>
-              <CardDescription>{problem.concept}</CardDescription>
-              <p className="text-muted-foreground text-sm mt-1">Category: {problem.category}</p>
+              <CardDescription>{problem.category}</CardDescription>
+              
             </div>
             <Badge className={getDifficultyColor(problem.difficulty)}>{problem.difficulty}</Badge>
           </div>
