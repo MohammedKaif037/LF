@@ -1,149 +1,150 @@
 "use client"
-//List of Problems 
+
+import { useState, useEffect } from "react"
+import Link from "next/link"
+import { supabase } from "@/lib/supabase"
+import { staticProblems } from "@/lib/static-data"
+import type { Problem } from "@/lib/supabase"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { CheckCircle, Code } from "lucide-react"
-import Link from "next/link"
-import { useEffect, useState } from "react"
-import { type Problem, getProblems } from "@/lib/supabase"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertCircle } from "lucide-react"
-
-const difficultyColors = {
-  Easy: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
-  Medium: "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20",
-  Hard: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
-}
+import { Search, Code } from "lucide-react"
 
 export function ProblemList() {
   const [problems, setProblems] = useState<Problem[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [filter, setFilter] = useState("All")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [difficultyFilter, setDifficultyFilter] = useState("all")
 
   useEffect(() => {
-    async function loadProblems() {
+    async function fetchProblems() {
       try {
-        setLoading(true)
-        setError(null)
-        const data = await getProblems()
-        setProblems(data)
-      } catch (err) {
-        console.error("Failed to load problems:", err)
-        setError("Failed to load problems. Using fallback data.")
+        const { data, error } = await supabase.from("problems").select("*").order("id", { ascending: true })
+
+        if (error) {
+          console.error("Error fetching problems:", error)
+          setProblems(staticProblems)
+        } else {
+          setProblems(data || staticProblems)
+        }
+      } catch (error) {
+        console.error("Failed to fetch problems:", error)
+        setProblems(staticProblems)
       } finally {
         setLoading(false)
       }
     }
 
-    loadProblems()
+    fetchProblems()
   }, [])
 
-  const filteredProblems =
-    filter === "All"
-      ? problems
-      : filter === "Completed"
-        ? problems.filter((p) => p.completed)
-        : problems.filter((p) => !p.completed)
+  const filteredProblems = problems.filter((problem) => {
+    const matchesSearch =
+      problem.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      problem.concept.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesDifficulty = difficultyFilter === "all" || problem.difficulty === difficultyFilter
+
+    return matchesSearch && matchesDifficulty
+  })
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "easy":
+        return "bg-green-500 hover:bg-green-600"
+      case "medium":
+        return "bg-yellow-500 hover:bg-yellow-600"
+      case "hard":
+        return "bg-red-500 hover:bg-red-600"
+      default:
+        return "bg-blue-500 hover:bg-blue-600"
+    }
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
-        <Button variant={filter === "All" ? "default" : "outline"} size="sm" onClick={() => setFilter("All")}>
-          All Problems
-        </Button>
-        <Button
-          variant={filter === "Completed" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setFilter("Completed")}
-        >
-          Completed
-        </Button>
-        <Button
-          variant={filter === "Incomplete" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setFilter("Incomplete")}
-        >
-          Incomplete
-        </Button>
+    <div className="container mx-auto py-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+        <div>
+          <h1 className="text-3xl font-bold">Java Problems</h1>
+          <p className="text-muted-foreground">Practice your Java skills with these coding challenges</p>
+        </div>
+        <div className="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+          <div className="relative flex-1">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search problems..."
+              className="pl-8"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Difficulty" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Difficulties</SelectItem>
+              <SelectItem value="easy">Easy</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="hard">Hard</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
-      {error && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Error</AlertTitle>
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {loading ? (
-          // Loading skeletons
-          Array.from({ length: 6 }).map((_, index) => (
-            <Card key={index} className="overflow-hidden">
-              <CardHeader className="pb-2">
-                <Skeleton className="h-6 w-32" />
-                <Skeleton className="h-5 w-48 mt-2" />
-              </CardHeader>
-              <CardContent>
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4 mt-2" />
-                <div className="flex flex-wrap gap-1 mt-3">
-                  <Skeleton className="h-5 w-16" />
-                  <Skeleton className="h-5 w-20" />
-                </div>
-              </CardContent>
-              <CardFooter className="border-t bg-secondary/30 pt-3 pb-3">
-                <Skeleton className="h-9 w-full" />
-              </CardFooter>
-            </Card>
-          ))
-        ) : filteredProblems.length > 0 ? (
-          filteredProblems.map((problem) => (
-            <Card key={problem.id} className="overflow-hidden transition-all hover:shadow-md">
+      {loading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {Array(6)
+            .fill(0)
+            .map((_, i) => (
+              <Card key={i} className="h-[200px]">
+                <CardHeader className="pb-2">
+                  <Skeleton className="h-6 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </CardHeader>
+                <CardContent>
+                  <Skeleton className="h-4 w-full mb-2" />
+                  <Skeleton className="h-4 w-5/6" />
+                </CardContent>
+                <CardFooter>
+                  <Skeleton className="h-9 w-full" />
+                </CardFooter>
+              </Card>
+            ))}
+        </div>
+      ) : filteredProblems.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProblems.map((problem) => (
+            <Card key={problem.id} className="flex flex-col">
               <CardHeader className="pb-2">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg flex items-center gap-2">
-                    {problem.completed && <CheckCircle className="h-4 w-4 text-green-500" />}
-                    Problem {problem.id}
-                  </CardTitle>
-                  <Badge
-                    variant="outline"
-                    className={difficultyColors[problem.difficulty as keyof typeof difficultyColors]}
-                  >
-                    {problem.difficulty}
-                  </Badge>
+                  <CardTitle>{problem.title}</CardTitle>
+                  <Badge className={getDifficultyColor(problem.difficulty)}>{problem.difficulty}</Badge>
                 </div>
-                <h3 className="font-medium">{problem.title}</h3>
+                <CardDescription>{problem.concept}</CardDescription>
               </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground line-clamp-2">{problem.description}</p>
-                <div className="flex flex-wrap gap-1 mt-3">
-                  {problem.concepts.map((concept) => (
-                    <Badge key={concept} variant="secondary" className="text-xs">
-                      {concept}
-                    </Badge>
-                  ))}
-                </div>
+              <CardContent className="flex-grow">
+                <p className="text-sm line-clamp-3">{problem.description}</p>
               </CardContent>
-              <CardFooter className="border-t bg-secondary/30 pt-3 pb-3">
-                <Link href={`/problems/${problem.id}`} className="w-full">
-                  <Button variant="default" className="w-full gap-2">
-                    <Code className="h-4 w-4" />
-                    Solve Problem
-                  </Button>
-                </Link>
+              <CardFooter>
+                <Button asChild className="w-full">
+                  <Link href={`/problems/${problem.id}`}>
+                    <Code className="mr-2 h-4 w-4" /> Solve Problem
+                  </Link>
+                </Button>
               </CardFooter>
             </Card>
-          ))
-        ) : (
-          <div className="col-span-full text-center py-8">
-            <p className="text-muted-foreground">No problems found matching your filter.</p>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <h3 className="text-xl font-semibold mb-2">No problems found</h3>
+          <p className="text-muted-foreground">Try adjusting your search or filter criteria</p>
+        </div>
+      )}
     </div>
   )
 }
