@@ -22,6 +22,7 @@ export type Problem = {
   difficulty: "easy" | "medium" | "hard"
   starter_code: string
   test_cases: string
+  category: string
   solution: string
   created_at: string
 }
