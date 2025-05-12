@@ -1,16 +1,14 @@
 import type React from "react"
-import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-//Root
 import { AuthProvider } from "@/components/auth-provider"
+
 const inter = Inter({ subsets: ["latin"] })
 
-export const metadata: Metadata = {
-  title: "Java Coding Problems",
-  description: "Master Java with 100 interactive coding problems",
-    generator: 'v0.dev'
+export const metadata = {
+  title: "JMaster - Java Learning Platform",
+  description: "Learn Java programming with interactive coding problems",
 }
 
 export default function RootLayout({
@@ -21,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false} disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <AuthProvider>{children}</AuthProvider>
         </ThemeProvider>
       </body>
