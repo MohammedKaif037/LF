@@ -1,339 +1,55 @@
-"use client"
-
-import { CodeEditor } from "@/components/code-editor"
+import { notFound } from "next/navigation"
+import { createServerComponentClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
 import { ProblemDetail } from "@/components/problem-detail"
 import { ProblemSidebar } from "@/components/problem-sidebar"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
-import { Skeleton } from "@/components/ui/skeleton"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { getProblem } from "@/lib/supabase"
-import { AlertCircle, AlertTriangle, ArrowLeft, CheckCircle, XCircle } from "lucide-react"
-import Link from "next/link"
-import { useEffect, useState } from "react"
+import { UserNav } from "@/components/user-nav"
+import { staticProblems } from "@/lib/static-data"
 
-export default function ProblemPage({ params }: { params: { id: string } }) {
+export default async function ProblemPage({ params }: { params: { id: string } }) {
   const problemId = Number.parseInt(params.id)
-  const [problem, setProblem] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
-  const [code, setCode] = useState("")
-  const [output, setOutput] = useState<string | null>(null)
-  const [executionResult, setExecutionResult] = useState<{
-    success: boolean
-    error: string | null
-    executionTime?: string
-  } | null>(null)
-  const [executing, setExecuting] = useState(false)
-  const [pageError, setPageError] = useState<Error | null>(null)
 
-  useEffect(() => {
-    async function loadProblem() {
-      try {
-        const data = await getProblem(problemId)
-        setProblem(data)
-        if (data?.starter_code) {
-          setCode(data.starter_code)
-        }
-      } catch (error) {
-        console.error(`Failed to load problem ${problemId}:`, error)
-        setPageError(error instanceof Error ? error : new Error(String(error)))
-      } finally {
-        setLoading(false)
-      }
+  // Create a Supabase client for server component
+  const supabase = createServerComponentClient({ cookies })
+
+  let problem
+
+  try {
+    // Try to fetch the problem from Supabase
+    const { data, error } = await supabase.from("problems").select("*").eq("id", problemId).single()
+
+    if (error) {
+      console.error("Error fetching problem:", error)
+      // Fall back to static data
+      problem = staticProblems.find((p) => p.id === problemId)
+    } else {
+      problem = data
     }
-
-    loadProblem()
-  }, [problemId])
-
-  // Error boundary effect to catch any uncaught errors
-  useEffect(() => {
-    const originalConsoleError = console.error;
-    
-    // Override console.error to catch React errors
-    console.error = (...args) => {
-      originalConsoleError.apply(console, args);
-      
-      // Check if this is a React error
-      const errorString = args.join(' ');
-      if (errorString.includes('React') || errorString.includes('Error:')) {
-        setPageError(new Error(errorString));
-      }
-    };
-
-    // Add a global error handler
-    const handleError = (event: ErrorEvent) => {
-      event.preventDefault();
-      setPageError(event.error || new Error('An unknown error occurred'));
-    };
-
-    // Add a global unhandled promise rejection handler
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      event.preventDefault();
-      setPageError(event.reason instanceof Error ? event.reason : new Error(String(event.reason)));
-    };
-
-    window.addEventListener('error', handleError);
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
-
-    return () => {
-      console.error = originalConsoleError;
-      window.removeEventListener('error', handleError);
-      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
-    };
-  }, []);
-
-  const executeCode = async (codeToExecute: string) => {
-    setExecuting(true)
-    setOutput(null)
-    setExecutionResult(null)
-
-    try {
-      const response = await fetch("/api/execute", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ code: codeToExecute }),
-      })
-
-      const data = await response.json()
-
-      if (response.ok) {
-        setOutput(data.output || "")
-        setExecutionResult({
-          success: data.success,
-          error: data.error,
-          executionTime: data.executionTime,
-        })
-      } else {
-        setExecutionResult({
-          success: false,
-          error: data.error || "Failed to execute code",
-        })
-      }
-    } catch (error) {
-      console.error("Error executing code:", error)
-      setExecutionResult({
-        success: false,
-        error: error instanceof Error ? error.message : "An unexpected error occurred while executing the code",
-      })
-    } finally {
-      setExecuting(false)
-    }
+  } catch (error) {
+    console.error("Failed to fetch problem:", error)
+    // Fall back to static data
+    problem = staticProblems.find((p) => p.id === problemId)
   }
 
-  const resetCode = () => {
-    if (problem?.starter_code) {
-      setCode(problem.starter_code)
-      setOutput(null)
-      setExecutionResult(null)
-    }
-  }
-
-  const dismissError = () => {
-    setPageError(null);
-  }
-
-  // If there's a page-level error, show it prominently
-  if (pageError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen p-4">
-        <Alert className="mb-6 max-w-2xl w-full border-red-500">
-          <AlertCircle className="h-5 w-5 text-red-500" />
-          <AlertTitle className="text-red-500">An error occurred</AlertTitle>
-          <AlertDescription className="mt-2">
-            <div className="bg-red-50 rounded p-3 text-red-800 font-mono text-sm mb-4 overflow-auto max-h-40">
-              {pageError.name}: {pageError.message}
-              {pageError.stack && (
-                <pre className="mt-2 text-xs overflow-auto">
-                  {pageError.stack}
-                </pre>
-              )}
-            </div>
-            <div className="flex justify-end">
-              <Button onClick={dismissError} variant="outline" className="mr-2">
-                Dismiss
-              </Button>
-              <Link href="/problems">
-                <Button>
-                  Return to Problems List
-                </Button>
-              </Link>
-            </div>
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
+  if (!problem) {
+    notFound()
   }
 
   return (
-    <SidebarProvider>
-      <div className="flex min-h-screen flex-col">
-        <ProblemSidebar />
-        <main className="flex-1">
-          <div className="container py-4">
-            <div className="flex items-center gap-4 mb-6">
-              <SidebarTrigger />
-              <Link href="/problems">
-                <Button variant="ghost" size="sm">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Problems
-                </Button>
-              </Link>
-            </div>
-
-            {loading ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <Card>
-                    <CardHeader>
-                      <Skeleton className="h-8 w-48" />
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-3/4" />
-                      <Skeleton className="h-4 w-5/6" />
-                    </CardContent>
-                  </Card>
-                </div>
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <Skeleton className="h-6 w-32" />
-                    </CardHeader>
-                    <CardContent>
-                      <Skeleton className="h-80 w-full" />
-                    </CardContent>
-                    <CardFooter className="flex justify-between">
-                      <Skeleton className="h-9 w-20" />
-                      <Skeleton className="h-9 w-24" />
-                    </CardFooter>
-                  </Card>
-                </div>
-              </div>
-            ) : problem ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div>
-                  <ProblemDetail problem={problem} />
-                </div>
-                <div className="space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Code Editor</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <CodeEditor defaultValue={code} onChange={setCode} onExecute={executeCode} />
-                    </CardContent>
-                    <CardFooter className="flex justify-between">
-                      <Button variant="outline" onClick={resetCode}>
-                        Reset
-                      </Button>
-                    </CardFooter>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Output</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <Tabs defaultValue="console">
-                        <TabsList className="mb-4">
-                          <TabsTrigger value="console">Console</TabsTrigger>
-                          <TabsTrigger value="test-cases">Test Cases</TabsTrigger>
-                        </TabsList>
-                        <TabsContent value="console">
-                          {executionResult && (
-                            <Alert
-                              className={`mb-4 ${
-                                executionResult.success
-                                  ? "border-green-500 text-green-500"
-                                  : "border-red-500 text-red-500"
-                              }`}
-                            >
-                              <div className="flex items-center gap-2">
-                                {executionResult.success ? (
-                                  <CheckCircle className="h-4 w-4" />
-                                ) : (
-                                  <XCircle className="h-4 w-4" />
-                                )}
-                                <AlertTitle>{executionResult.success ? "Success" : "Error"}</AlertTitle>
-                              </div>
-                              <AlertDescription className="mt-1">
-                                {executionResult.success
-                                  ? `Code executed successfully${
-                                      executionResult.executionTime ? ` in ${executionResult.executionTime}` : ""
-                                    }`
-                                  : executionResult.error || "An error occurred during execution"}
-                              </AlertDescription>
-                            </Alert>
-                          )}
-
-                          <div className="bg-secondary rounded-md p-4 font-mono text-sm h-32 overflow-auto">
-                            {executing ? (
-                              <p className="text-muted-foreground">Executing code...</p>
-                            ) : output !== null ? (
-                              output || <span className="text-muted-foreground">(No output)</span>
-                            ) : (
-                              <p className="text-muted-foreground">Run your code to see output here...</p>
-                            )}
-                          </div>
-                        </TabsContent>
-                        <TabsContent value="test-cases">
-  <div className="space-y-2">
-    {problem.test_cases && problem.test_cases.length > 0 ? (
-      problem.test_cases.map((testCase: any, index: number) => (
-        <div key={index} className="border rounded-md p-3">
-          <div className="flex justify-between text-sm mb-2">
-            <span className="font-medium">Test Case #{index + 1}</span>
-            <span className="text-muted-foreground">Not run</span>
-          </div>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div>
-              <p className="font-medium mb-1">Input:</p>
-              <pre className="bg-secondary rounded-md p-2 overflow-x-auto">
-                {testCase.input || "(empty)"}
-              </pre>
-            </div>
-            <div>
-              <p className="font-medium mb-1">Expected Output:</p>
-              <pre className="bg-secondary rounded-md p-2 overflow-x-auto">
-                {testCase.expected_output}
-              </pre>
+    <div className="flex min-h-screen">
+      <ProblemSidebar />
+      <div className="flex-1">
+        <header className="border-b">
+          <div className="flex h-16 items-center px-4">
+            <div className="ml-auto flex items-center space-x-4">
+              <UserNav />
             </div>
           </div>
-        </div>
-      ))
-    ) : (
-      <div className="text-center py-4 text-muted-foreground">
-        No test cases available for this problem
-      </div>
-    )}
-  </div>
-</TabsContent>
-                                           </Tabs>
-                    </CardContent>
-                  </Card>
-                </div>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-12">
-                <div className="flex items-center gap-2 text-red-500 mb-4">
-                  <AlertCircle className="h-6 w-6" />
-                  <h2 className="text-xl font-bold">Problem Not Found</h2>
-                </div>
-                <p className="text-muted-foreground mb-6">
-                  The problem you're looking for doesn't exist or couldn't be loaded.
-                </p>
-                <Link href="/problems">
-                  <Button>View All Problems</Button>
-                </Link>
-              </div>
-            )}
-          </div>
+        </header>
+        <main>
+          <ProblemDetail problem={problem} />
         </main>
       </div>
-    </SidebarProvider>
+    </div>
   )
-                }
+}
