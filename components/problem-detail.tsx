@@ -1,81 +1,141 @@
+"use client"
+
+import { useState } from "react"
+import type { Problem } from "@/lib/supabase"
+import { CodeEditor } from "./code-editor"
+import { executeCode, useCodeSubmission } from "./code-executor"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import type { Problem } from "@/lib/supabase"
-import { Lightbulb } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { CheckCircle, Save } from "lucide-react"
+import { useAuth } from "./auth-provider"
 
 interface ProblemDetailProps {
   problem: Problem
 }
-//Problem Detail
 
 export function ProblemDetail({ problem }: ProblemDetailProps) {
-  const difficultyColors = {
-    Easy: "bg-green-500/10 text-green-500 hover:bg-green-500/20",
-    Medium: "bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20",
-    Hard: "bg-red-500/10 text-red-500 hover:bg-red-500/20",
+  const [submissionResult, setSubmissionResult] = useState<{
+    success: boolean
+    message: string
+    output?: string
+  } | null>(null)
+
+  const { submitSolution, isSubmitting } = useCodeSubmission()
+  const { user } = useAuth()
+
+  const getDifficultyColor = (difficulty: string) => {
+    switch (difficulty) {
+      case "easy":
+        return "bg-green-500 hover:bg-green-600"
+      case "medium":
+        return "bg-yellow-500 hover:bg-yellow-600"
+      case "hard":
+        return "bg-red-500 hover:bg-red-600"
+      default:
+        return "bg-blue-500 hover:bg-blue-600"
+    }
+  }
+
+  const handleSubmit = async (code: string) => {
+    const result = await submitSolution(problem.id, code)
+    setSubmissionResult(result)
+    return { success: result.success, output: result.output || "" }
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>{problem.title}</CardTitle>
-          <Badge variant="outline" className={difficultyColors[problem.difficulty as keyof typeof difficultyColors]}>
-            {problem.difficulty}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <Tabs defaultValue="description">
-          <TabsList className="mb-4">
-            <TabsTrigger value="description">Description</TabsTrigger>
-            <TabsTrigger value="hints">Hints</TabsTrigger>
+    <div className="container mx-auto py-6">
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
+            <div>
+              <CardTitle className="text-2xl">{problem.title}</CardTitle>
+              <CardDescription>{problem.concept}</CardDescription>
+            </div>
+            <Badge className={getDifficultyColor(problem.difficulty)}>{problem.difficulty}</Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="prose dark:prose-invert max-w-none">
+            <p>{problem.description}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {submissionResult && (
+        <Alert
+          className={`mb-6 ${
+            submissionResult.success
+              ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
+              : "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800"
+          }`}
+        >
+          {submissionResult.success ? (
+            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+          ) : (
+            <CheckCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+          )}
+          <AlertTitle>{submissionResult.success ? "Success!" : "Submission Failed"}</AlertTitle>
+          <AlertDescription>{submissionResult.message}</AlertDescription>
+        </Alert>
+      )}
+
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-xl font-bold">Code Editor</h2>
+        {user && (
+          <Button onClick={() => {}} disabled={isSubmitting} variant="outline" className="gap-1">
+            <Save className="h-4 w-4" />
+            {isSubmitting ? "Submitting..." : "Submit Solution"}
+          </Button>
+        )}
+      </div>
+
+      <CodeEditor
+        problemId={problem.id}
+        starterCode={problem.starter_code}
+        testCases={problem.test_cases}
+        onExecute={async (code, input) => {
+          const result = await executeCode({ code, input })
+          return result
+        }}
+      />
+
+      <div className="mt-6">
+        <Tabs defaultValue="solution">
+          <TabsList>
             <TabsTrigger value="solution">Solution</TabsTrigger>
+            <TabsTrigger value="hints">Hints</TabsTrigger>
           </TabsList>
-          <TabsContent value="description">
-            <div className="space-y-4">
-              <p>{problem.description}</p>
-              <div className="flex flex-wrap gap-2 mt-4">
-                <h4 className="text-sm font-medium w-full">Concepts:</h4>
-                {problem.concepts.map((concept) => (
-                  <Badge key={concept} variant="secondary">
-                    {concept}
-                  </Badge>
-                ))}
-              </div>
-            </div>
+          <TabsContent value="solution" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Sample Solution</CardTitle>
+                <CardDescription>Try to solve the problem on your own before looking at the solution.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <pre className="bg-muted p-4 rounded-md overflow-auto text-sm font-mono">{problem.solution}</pre>
+              </CardContent>
+            </Card>
           </TabsContent>
-          <TabsContent value="hints">
-            <div className="space-y-3">
-              {problem.hints && problem.hints.length > 0 ? (
-                problem.hints.map((hint, index) => (
-                  <div key={index} className="flex items-start gap-2 p-3 rounded-md bg-secondary/50">
-                    <Lightbulb className="h-5 w-5 text-yellow-500 mt-0.5" />
-                    <p className="text-sm">{hint}</p>
-                  </div>
-                ))
-              ) : (
-                <p className="text-muted-foreground">No hints available for this problem.</p>
-              )}
-            </div>
-          </TabsContent>
-          <TabsContent value="solution">
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h4 className="text-sm font-medium">Sample Solution:</h4>
-                <Button variant="ghost" size="sm">
-                  Copy
-                </Button>
-              </div>
-              <pre className="bg-secondary rounded-md p-4 overflow-x-auto text-sm">
-                <code>{problem.solution}</code>
-              </pre>
-            </div>
+          <TabsContent value="hints" className="mt-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Hints</CardTitle>
+                <CardDescription>Use these hints if you're stuck on the problem.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>Think about the basic structure of a Java program.</li>
+                  <li>Remember to use proper syntax for the required operations.</li>
+                  <li>Consider edge cases in your solution.</li>
+                </ul>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
