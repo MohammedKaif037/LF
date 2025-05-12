@@ -1,215 +1,69 @@
-// This is Fallback static data for when Supabase connection fails
+// Fallback data in case Supabase connection fails
 export const staticProblems = [
   {
     id: 1,
     title: "Hello World",
-    description: "Write a Java program that prints 'Hello, World!' to the console.",
-    difficulty: "Easy",
-    concepts: ["Basic Syntax", "Output"],
-    starter_code: `public class Solution {
-  public static void main(String[] args) {
-    // Your code here
-    
-  }
-}`,
-    solution: `public class Solution {
-  public static void main(String[] args) {
-    System.out.println("Hello, World!");
-  }
-}`,
-    hints: ["Remember to use System.out.println() to print to the console."],
-    test_cases: [
-      {
-        input: "",
-        expected_output: "Hello, World!",
-      },
-    ],
-    completed: false,
+    description: 'Write a program that prints "Hello, World!" to the console',
+    concept: "Basic program structure, System.out.println()",
+    difficulty: "easy",
+    starter_code:
+      "public class HelloWorld {\n  public static void main(String[] args) {\n    // Your code here\n  }\n}",
+    test_cases: "Output: Hello, World!",
+    solution:
+      'public class HelloWorld {\n  public static void main(String[] args) {\n    System.out.println("Hello, World!");\n  }\n}',
+    created_at: "2023-01-01T00:00:00.000Z",
   },
   {
     id: 2,
     title: "Variable Declaration",
-    description: "Create variables to store your name, age, and height (in meters). Print them.",
-    difficulty: "Easy",
-    concepts: ["Variables", "Data Types", "Output"],
-    starter_code: `public class Solution {
-  public static void main(String[] args) {
-    // Declare variables for name, age, and height
-    // Print them to the console
-    
-  }
-}`,
-    solution: `public class Solution {
-  public static void main(String[] args) {
-    String name = "John Doe";
-    int age = 25;
-    double height = 1.75;
-    
-    System.out.println("Name: " + name);
-    System.out.println("Age: " + age);
-    System.out.println("Height: " + height + "m");
-  }
-}`,
-    hints: [
-      "Use String for text, int for whole numbers, and double for decimal numbers.",
-      "Use System.out.println() to print each variable.",
-    ],
-    test_cases: [
-      {
-        input: "",
-        expected_output: "Name: ",
-      },
-    ],
-    completed: false,
+    description: "Create variables to store your name, age, and height (in meters)",
+    concept: "Variable declaration, primitive data types",
+    difficulty: "easy",
+    starter_code:
+      "public class Variables {\n  public static void main(String[] args) {\n    // Declare your variables here\n    \n    // Print them out\n  }\n}",
+    test_cases: "Output should include string, int, and double values",
+    solution:
+      'public class Variables {\n  public static void main(String[] args) {\n    String name = "John Doe";\n    int age = 25;\n    double height = 1.75;\n    \n    System.out.println("Name: " + name);\n    System.out.println("Age: " + age);\n    System.out.println("Height: " + height + " meters");\n  }\n}',
+    created_at: "2023-01-02T00:00:00.000Z",
   },
   {
     id: 3,
-    title: "Conditional Statements",
-    description: "Write a program that checks if a number is positive, negative, or zero.",
-    difficulty: "Easy",
-    concepts: ["Conditionals", "If-Else"],
-    starter_code: `public class Solution {
-  public static void main(String[] args) {
-    int number = 10; // Try with different values
-    
-    // Your code here
-    
-  }
-}`,
-    solution: `public class Solution {
-  public static void main(String[] args) {
-    int number = 10; // Try with different values
-    
-    if (number > 0) {
-      System.out.println("Positive");
-    } else if (number < 0) {
-      System.out.println("Negative");
-    } else {
-      System.out.println("Zero");
-    }
-  }
-}`,
-    hints: [
-      "Use if, else if, and else statements to check different conditions.",
-      "Compare the number with 0 to determine if it's positive, negative, or zero.",
-    ],
-    test_cases: [
-      {
-        input: "",
-        expected_output: "Positive",
-      },
-    ],
-    completed: false,
+    title: "Simple Calculator",
+    description:
+      "Write a program that takes two numbers and performs addition, subtraction, multiplication, and division",
+    concept: "Arithmetic operators, basic input/output",
+    difficulty: "easy",
+    starter_code:
+      "import java.util.Scanner;\n\npublic class Calculator {\n  public static void main(String[] args) {\n    Scanner scanner = new Scanner(System.in);\n    \n    // Get user input\n    \n    // Perform calculations\n    \n    // Print results\n  }\n}",
+    test_cases: "Input: 10 5\nOutput should show sum, difference, product, and quotient",
+    solution:
+      'import java.util.Scanner;\n\npublic class Calculator {\n  public static void main(String[] args) {\n    Scanner scanner = new Scanner(System.in);\n    \n    System.out.print("Enter first number: ");\n    double num1 = scanner.nextDouble();\n    \n    System.out.print("Enter second number: ");\n    double num2 = scanner.nextDouble();\n    \n    System.out.println("Sum: " + (num1 + num2));\n    System.out.println("Difference: " + (num1 - num2));\n    System.out.println("Product: " + (num1 * num2));\n    System.out.println("Quotient: " + (num1 / num2));\n    \n    scanner.close();\n  }\n}',
+    created_at: "2023-01-03T00:00:00.000Z",
   },
   {
     id: 4,
-    title: "Loops",
-    description: "Print numbers from 1 to 10 using a for loop.",
-    difficulty: "Easy",
-    concepts: ["Loops", "For Loop"],
-    starter_code: `public class Solution {
-  public static void main(String[] args) {
-    // Your code here
-    
-  }
-}`,
-    solution: `public class Solution {
-  public static void main(String[] args) {
-    for (int i = 1; i <= 10; i++) {
-      System.out.println(i);
-    }
-  }
-}`,
-    hints: [
-      "Use a for loop with a counter variable that starts at 1.",
-      "Increment the counter in each iteration until it reaches 10.",
-    ],
-    test_cases: [
-      {
-        input: "",
-        expected_output: "1\n2\n3\n4\n5\n6\n7\n8\n9\n10",
-      },
-    ],
-    completed: false,
+    title: "Conditional Statements",
+    description: "Write a program that determines if a number is positive, negative, or zero",
+    concept: "If-else statements, conditional logic",
+    difficulty: "easy",
+    starter_code:
+      "import java.util.Scanner;\n\npublic class Conditions {\n  public static void main(String[] args) {\n    Scanner scanner = new Scanner(System.in);\n    \n    // Get user input\n    \n    // Check if positive, negative, or zero\n    \n    scanner.close();\n  }\n}",
+    test_cases: "Test with values: 5, -3, 0",
+    solution:
+      'import java.util.Scanner;\n\npublic class Conditions {\n  public static void main(String[] args) {\n    Scanner scanner = new Scanner(System.in);\n    \n    System.out.print("Enter a number: ");\n    int number = scanner.nextInt();\n    \n    if (number > 0) {\n      System.out.println("The number is positive.");\n    } else if (number < 0) {\n      System.out.println("The number is negative.");\n    } else {\n      System.out.println("The number is zero.");\n    }\n    \n    scanner.close();\n  }\n}',
+    created_at: "2023-01-04T00:00:00.000Z",
   },
   {
     id: 5,
-    title: "Arrays",
-    description: "Create an array of integers and find the sum of all elements.",
-    difficulty: "Medium",
-    concepts: ["Arrays", "Loops"],
-    starter_code: `public class Solution {
-  public static void main(String[] args) {
-    int[] numbers = {5, 10, 15, 20, 25};
-    
-    // Calculate and print the sum
-    
-  }
-}`,
-    solution: `public class Solution {
-  public static void main(String[] args) {
-    int[] numbers = {5, 10, 15, 20, 25};
-    
-    int sum = 0;
-    for (int number : numbers) {
-      sum += number;
-    }
-    
-    System.out.println("Sum: " + sum);
-  }
-}`,
-    hints: [
-      "Initialize a variable to store the sum.",
-      "Use a for-each loop to iterate through the array.",
-      "Add each element to the sum variable.",
-    ],
-    test_cases: [
-      {
-        input: "",
-        expected_output: "Sum: 75",
-      },
-    ],
-    completed: false,
-  },
-  {
-    id: 6,
-    title: "Methods",
-    description: "Create a method that calculates the factorial of a number.",
-    difficulty: "Medium",
-    concepts: ["Methods", "Recursion"],
-    starter_code: `public class Solution {
-  public static void main(String[] args) {
-    int number = 5;
-    System.out.println("Factorial of " + number + " is: " + factorial(number));
-  }
-  
-  // Create the factorial method here
-  
-}`,
-    solution: `public class Solution {
-  public static void main(String[] args) {
-    int number = 5;
-    System.out.println("Factorial of " + number + " is: " + factorial(number));
-  }
-  
-  public static int factorial(int n) {
-    if (n == 0 || n == 1) {
-      return 1;
-    }
-    return n * factorial(n - 1);
-  }
-}`,
-    hints: [
-      "The factorial of 0 and 1 is 1.",
-      "For other numbers, factorial(n) = n * factorial(n-1).",
-      "You can use recursion or a loop to solve this problem.",
-    ],
-    test_cases: [
-      {
-        input: "",
-        expected_output: "Factorial of 5 is: 120",
-      },
-    ],
-    completed: false,
+    title: "Loops",
+    description: "Write a program that prints the first 10 numbers in the Fibonacci sequence",
+    concept: "Loops, sequence generation",
+    difficulty: "medium",
+    starter_code:
+      "public class Fibonacci {\n  public static void main(String[] args) {\n    // Print the first 10 Fibonacci numbers\n  }\n}",
+    test_cases: "Output: 0, 1, 1, 2, 3, 5, 8, 13, 21, 34",
+    solution:
+      'public class Fibonacci {\n  public static void main(String[] args) {\n    int n = 10;\n    int first = 0, second = 1;\n    \n    System.out.print(first + ", " + second);\n    \n    for (int i = 2; i < n; i++) {\n      int next = first + second;\n      System.out.print(", " + next);\n      first = second;\n      second = next;\n    }\n  }\n}',
+    created_at: "2023-01-05T00:00:00.000Z",
   },
 ]
