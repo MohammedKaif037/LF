@@ -53,6 +53,7 @@ export function ProblemDetail({ problem }: ProblemDetailProps) {
             <div>
               <CardTitle className="text-2xl">{problem.title}</CardTitle>
               <CardDescription>{problem.concept}</CardDescription>
+              <p className="text-muted-foreground text-sm mt-1">Category: {problem.category}</p>
             </div>
             <Badge className={getDifficultyColor(problem.difficulty)}>{problem.difficulty}</Badge>
           </div>
