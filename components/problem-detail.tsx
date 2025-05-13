@@ -1,121 +1,6 @@
 "use client"
 
-import { useState } from "react"
-import type { Problem } from "@/lib/supabase"
-import { CodeEditor } from "./code-editor"
-import { executeCode, useCodeSubmission } from "./code-executor"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { CheckCircle, AlertCircle, Save, Trophy } from "lucide-react"
-import { useAuth } from "./auth-provider"
-import { useToast } from "@/components/ui/use-toast"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-
-interface ProblemDetailProps {
-  problem: Problem
-}
-
-export function ProblemDetail({ problem }: ProblemDetailProps) {
-  const [code, setCode] = useState(problem.starter_code)
-  const [submissionResult, setSubmissionResult] = useState<{
-    success: boolean
-    message: string
-    output?: string
-  } | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
-
-  const { submitSolution } = useCodeSubmission()
-  const { user } = useAuth()
-  const { toast } = useToast()
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "easy":
-        return "bg-green-500 hover:bg-green-600"
-      case "medium":
-        return "bg-yellow-500 hover:bg-yellow-600"
-      case "hard":
-        return "bg-red-500 hover:bg-red-600"
-      default:
-        return "bg-blue-500 hover:bg-blue-600"
-    }
-  }
-
-  const handleCodeChange = (newCode: string) => {
-    setCode(newCode)
-  }
-
-  const handleSubmit = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication required",
-        description: "You must be logged in to submit solutions",
-        variant: "destructive",
-      })
-      return
-    }
-
-    setIsSubmitting(true)
-    setSubmissionResult(null)
-
-    try {
-      // First execute the code to verify it works
-      const executionResult = await executeCode({ code })
-
-      if (!executionResult.success) {
-        setSubmissionResult({
-          success: false,
-          message: "Your code failed to execute correctly",
-          output: executionResult.output,
-        })
-        return
-      }
-
-      // If execution was successful, submit the solution
-      const result = await submitSolution(problem.id, code)
-      setSubmissionResult(result)
-
-      if (result.success) {
-        setShowSuccessDialog(true)
-      }
-    } catch (error) {
-      setSubmissionResult({
-        success: false,
-        message: error instanceof Error ? error.message : "An unexpected error occurred",
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  return (
-    <div className="container mx-auto py-6">
-      <Card className="mb-6">
-        <CardHeader>
-          <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
-            <div>
-              <CardTitle className="text-2xl">{problem.title}</CardTitle>
-              <CardDescription>{problem.category || problem.concept}</CardDescription>
-            </div>
-            <Badge className={getDifficultyColor(problem.difficulty)}>{problem.difficulty}</Badge>
-          </div>
-        </CardHeader>
-"use client"
-
-import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Problem } from "@/lib/supabase"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -133,22 +18,34 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
 import { supabase } from "@/lib/supabase"
 
 interface ProblemDetailProps {
   problem: Problem
 }
 
-function extractInputLabel(code: string): string | null {
+// Helper function to decode escape sequences in code
+function decodeEscapeSequences(code) {
+  if (!code) return "";
+  
+  // Replace common escape sequences
+  return code
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\"/g, '"')
+    .replace(/\\'/g, "'")
+    .replace(/\\\\/g, '\\');
+}
+
+function extractInputLabel(code) {
   // Python input("label")
-  let match = code.match(/input$$"([^"]+)"$$/)
+  let match = code.match(/input\("([^"]+)"\)/)
   if (match) return match[1]
   // C scanf("label")
   match = code.match(/scanf\("([^"]+)"/)
   if (match) return match[1]
-  // Java new Scanner(System.in).next(); System.out.print("label")
-  match = code.match(/System\.out\.print(?:ln)?$$"([^"]+)"$$/)
+  // Java Scanner input
+  match = code.match(/System\.out\.print(?:ln)?\("([^"]+)"\)/)
   if (match) return match[1]
   return null
 }
@@ -157,16 +54,12 @@ async function executeCodeWithCodex({
   code,
   language,
   input = "",
-}: {
-  code: string
-  language: string
-  input?: string
 }) {
   // Remove input prompts for execution (for clean output)
   code = code
-    .replace(/input$$"([^"]+)"$$/g, "input()")
+    .replace(/input\("([^"]+)"\)/g, "input()")
     .replace(/scanf\("([^"]+)"/g, 'scanf("')
-    .replace(/System\.out\.print(?:ln)?$$"([^"]+)"$$/g, "")
+    .replace(/System\.out\.print(?:ln)?\("([^"]+)"\)/g, "")
 
   const data = new URLSearchParams()
   data.append("language", language)
@@ -195,16 +88,15 @@ async function executeCodeWithCodex({
 }
 
 export function ProblemDetail({ problem }: ProblemDetailProps) {
-  const [code, setCode] = useState(problem.starter_code)
-  const [submissionResult, setSubmissionResult] = useState<{
-    success: boolean
-    message: string
-    output?: string
-  } | null>(null)
+  // Decode escape sequences in the starter code
+  const decodedStarterCode = decodeEscapeSequences(problem.starter_code);
+  
+  const [code, setCode] = useState(decodedStarterCode)
+  const [submissionResult, setSubmissionResult] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isExecuting, setIsExecuting] = useState(false)
   const [showSuccessDialog, setShowSuccessDialog] = useState(false)
-  const [inputPrompt, setInputPrompt] = useState<string | null>(null)
+  const [inputPrompt, setInputPrompt] = useState(null)
   const [userInput, setUserInput] = useState("")
   const [output, setOutput] = useState("")
 
@@ -214,7 +106,12 @@ export function ProblemDetail({ problem }: ProblemDetailProps) {
   // You can infer language from problem, or add a selector
   const language = problem.language || "java"
 
-  const getDifficultyColor = (difficulty: string) => {
+  // Check for input prompt when component loads
+  useEffect(() => {
+    setInputPrompt(extractInputLabel(code))
+  }, [code])
+
+  const getDifficultyColor = (difficulty) => {
     switch (difficulty) {
       case "easy":
         return "bg-green-500 hover:bg-green-600"
@@ -227,7 +124,7 @@ export function ProblemDetail({ problem }: ProblemDetailProps) {
     }
   }
 
-  const handleCodeChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleCodeChange = (e) => {
     const newCode = e.target.value
     setCode(newCode)
     // Detect input prompt label
@@ -325,6 +222,30 @@ export function ProblemDetail({ problem }: ProblemDetailProps) {
     }
   }
 
+  // Create a custom code editor component with proper styling
+  const CodeEditor = ({ value, onChange }) => {
+    return (
+      <div className="relative">
+        <pre className="absolute top-0 left-0 right-0 bottom-0 pointer-events-none overflow-hidden bg-muted rounded-md opacity-0">
+          {value}
+        </pre>
+        <textarea
+          value={value}
+          onChange={onChange}
+          className="w-full h-[400px] md:h-[500px] font-mono text-sm p-4 resize-none bg-muted rounded-md"
+          style={{ 
+            tabSize: 2,
+            whiteSpace: "pre",
+            overflowWrap: "normal",
+            overflow: "auto"
+          }}
+          spellCheck="false"
+          data-gramm="false"
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="container mx-auto py-6">
       <Card className="mb-6">
@@ -344,7 +265,9 @@ export function ProblemDetail({ problem }: ProblemDetailProps) {
             {problem.test_cases && (
               <div className="mt-4">
                 <h3 className="text-lg font-medium mb-2">Test Cases</h3>
-                <pre className="bg-muted p-3 rounded-md text-sm overflow-auto">{problem.test_cases}</pre>
+                <pre className="bg-muted p-3 rounded-md text-sm overflow-auto">
+                  {decodeEscapeSequences(problem.test_cases)}
+                </pre>
               </div>
             )}
           </div>
@@ -406,12 +329,8 @@ export function ProblemDetail({ problem }: ProblemDetailProps) {
             </div>
           )}
 
-          <Textarea
-            value={code}
-            onChange={handleCodeChange}
-            className="flex-1 font-mono text-sm p-4 resize-none h-[400px] md:h-[500px]"
-            placeholder="Write your Java code here..."
-          />
+          {/* Using our custom CodeEditor component */}
+          <CodeEditor value={code} onChange={handleCodeChange} />
         </div>
 
         <div className="flex flex-col">
@@ -423,10 +342,10 @@ export function ProblemDetail({ problem }: ProblemDetailProps) {
       </div>
 
       <div className="mt-6">
-        <Tabs defaultValue="solution">
+        <Tabs defaultValue="hints">
           <TabsList>
-            <TabsTrigger value="solution">Solution</TabsTrigger>
             <TabsTrigger value="hints">Hints</TabsTrigger>
+            <TabsTrigger value="solution">Solution</TabsTrigger>
           </TabsList>
           <TabsContent value="solution" className="mt-4">
             <Card>
@@ -435,7 +354,9 @@ export function ProblemDetail({ problem }: ProblemDetailProps) {
                 <CardDescription>Try to solve the problem on your own before looking at the solution.</CardDescription>
               </CardHeader>
               <CardContent>
-                <pre className="bg-muted p-4 rounded-md overflow-auto text-sm font-mono">{problem.solution}</pre>
+                <pre className="bg-muted p-4 rounded-md overflow-auto text-sm font-mono">
+                  {decodeEscapeSequences(problem.solution)}
+                </pre>
               </CardContent>
             </Card>
           </TabsContent>
@@ -481,4 +402,4 @@ export function ProblemDetail({ problem }: ProblemDetailProps) {
       </Dialog>
     </div>
   )
-}
+  }
