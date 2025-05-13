@@ -1,7 +1,11 @@
 import { LoginForm } from "@/components/login-form"
 import Link from "next/link"
 
-export default function LoginPage() {
+export default function LoginPage({
+  searchParams,
+}: {
+  searchParams: { redirect?: string; message?: string }
+}) {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4">
       <div className="mb-8 text-center">
@@ -10,7 +14,7 @@ export default function LoginPage() {
         </Link>
         <p className="text-muted-foreground">Learn Java Programming</p>
       </div>
-      <LoginForm />
+      <LoginForm redirectUrl={searchParams.redirect} message={searchParams.message} />
     </div>
   )
 }
