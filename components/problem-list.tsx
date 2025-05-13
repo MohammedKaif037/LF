@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
 import { supabase } from "@/lib/supabase"
 import { staticProblems } from "@/lib/static-data"
 import type { Problem } from "@/lib/supabase"
@@ -11,7 +10,21 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Search, Code } from "lucide-react"
+import { Search, Code, X, CheckCircle, AlertCircle, Play, Save, Trophy } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Textarea } from "@/components/ui/textarea"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { executeCode, useCodeSubmission } from "@/components/code-executor"
+import { useAuth } from "@/components/auth-provider"
+import { useToast } from "@/components/ui/use-toast"
 
 export function ProblemList() {
   const [problems, setProblems] = useState<Problem[]>([])
@@ -20,15 +33,37 @@ export function ProblemList() {
   const [difficultyFilter, setDifficultyFilter] = useState("all")
   const [categoryFilter, setCategoryFilter] = useState("all")
 
+  // Solve problem state
+  const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null)
+  const [code, setCode] = useState("")
+  const [input, setInput] = useState("")
+  const [output, setOutput] = useState("")
+  const [executionTime, setExecutionTime] = useState<string | null>(null)
+  const [isExecuting, setIsExecuting] = useState(false)
+  const [executionSuccess, setExecutionSuccess] = useState<boolean | null>(null)
+  const [executionError, setExecutionError] = useState<string | null>(null)
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false)
+  const [submissionResult, setSubmissionResult] = useState<{
+    success: boolean
+    message: string
+    output?: string
+  } | null>(null)
+
+  const { submitSolution, isSubmitting } = useCodeSubmission()
+  const { user } = useAuth()
+  const { toast } = useToast()
+
   useEffect(() => {
     async function fetchProblems() {
       try {
+        console.log("Fetching problems from Supabase")
         const { data, error } = await supabase.from("problems").select("*").order("id", { ascending: true })
 
         if (error) {
           console.error("Error fetching problems:", error)
           setProblems(staticProblems)
         } else {
+          console.log(`Fetched ${data?.length || 0} problems`)
           setProblems(data || staticProblems)
         }
       } catch (error) {
@@ -63,6 +98,116 @@ export function ProblemList() {
         return "bg-red-500 hover:bg-red-600"
       default:
         return "bg-blue-500 hover:bg-blue-600"
+    }
+  }
+
+  const handleOpenProblem = (problem: Problem) => {
+    console.log("Opening problem:", problem.title)
+    setSelectedProblem(problem)
+    setCode(problem.starter_code || "")
+    setInput("")
+    setOutput("")
+    setExecutionTime(null)
+    setExecutionSuccess(null)
+    setExecutionError(null)
+    setSubmissionResult(null)
+  }
+
+  const handleCloseProblem = () => {
+    console.log("Closing problem dialog")
+    setSelectedProblem(null)
+  }
+
+  const handleExecute = async () => {
+    if (!selectedProblem) return
+
+    console.log("Execute button clicked")
+    setIsExecuting(true)
+    setOutput("Executing code...")
+    setExecutionSuccess(null)
+    setExecutionError(null)
+    setExecutionTime(null)
+
+    try {
+      // Use the language property from the problem or default to "java"
+      const language = selectedProblem.language || "java"
+      console.log(`Executing ${language} code`)
+      
+      const result = await executeCode({ 
+        code, 
+        language, 
+        input 
+      })
+      
+      console.log("Execution result:", result)
+      setOutput(result.output)
+      setExecutionSuccess(result.success)
+      setExecutionTime(result.executionTime || null)
+      setExecutionError(result.error || null)
+    } catch (error) {
+      console.error("Exception during code execution:", error)
+      setOutput(`Error: ${error instanceof Error ? error.message : String(error)}`)
+      setExecutionSuccess(false)
+      setExecutionError(error instanceof Error ? error.message : String(error))
+    } finally {
+      setIsExecuting(false)
+    }
+  }
+
+  const handleSubmit = async () => {
+    if (!selectedProblem) return
+
+    console.log("Submit button clicked")
+    if (!user) {
+      toast({
+        title: "Authentication required",
+        description: "You must be logged in to submit solutions",
+        variant: "destructive",
+      })
+      return
+    }
+
+    setIsExecuting(true)
+    setSubmissionResult(null)
+
+    try {
+      // Use the language property from the problem or default to "java"
+      const language = selectedProblem.language || "java"
+      
+      // First execute the code to verify it works
+      console.log("Validating solution before submission")
+      const executionResult = await executeCode({ 
+        code, 
+        language 
+      })
+
+      if (!executionResult.success) {
+        console.error("Submission validation failed:", executionResult)
+        setSubmissionResult({
+          success: false,
+          message: "Your code failed to execute correctly",
+          output: executionResult.output,
+        })
+        return
+      }
+
+      // If execution was successful, submit the solution
+      console.log("Submitting solution")
+      const result = await submitSolution(selectedProblem.id, code, language)
+      console.log("Submission result:", result)
+      setSubmissionResult(result)
+
+      if (result.success) {
+        setShowSuccessDialog(true)
+      }
+    } catch (error) {
+      console.error("Exception during submission:", error)
+      setSubmissionResult({
+        success: false,
+        message: error instanceof Error ? error.message : "An unexpected error occurred",
+      })
+    } finally {
+      setIsExecuting(false)
     }
   }
 
@@ -147,10 +292,8 @@ export function ProblemList() {
                 <p className="text-sm line-clamp-3">{problem.description}</p>
               </CardContent>
               <CardFooter>
-                <Button asChild className="w-full">
-                  <Link href={`/problems/${problem.id}`}>
-                    <Code className="mr-2 h-4 w-4" /> Solve Problem
-                  </Link>
+                <Button onClick={() => handleOpenProblem(problem)} className="w-full">
+                  <Code className="mr-2 h-4 w-4" /> Solve Problem
                 </Button>
               </CardFooter>
             </Card>
@@ -162,6 +305,174 @@ export function ProblemList() {
           <p className="text-muted-foreground">Try adjusting your search or filter criteria</p>
         </div>
       )}
+
+      {/* Problem Solving Dialog */}
+      {selectedProblem && (
+        <Dialog open={!!selectedProblem} onOpenChange={(open) => !open && handleCloseProblem()}>
+          <DialogContent className="max-w-5xl w-[90vw] h-[90vh] flex flex-col">
+            <DialogHeader className="flex flex-row justify-between items-start">
+              <div>
+                <DialogTitle className="flex items-center gap-2">
+                  <span>{selectedProblem.title}</span>
+                  <Badge className={getDifficultyColor(selectedProblem.difficulty)}>{selectedProblem.difficulty}</Badge>
+                </DialogTitle>
+                <DialogDescription>{selectedProblem.concept}</DialogDescription>
+              </div>
+              <Button variant="ghost" size="icon" onClick={handleCloseProblem}>
+                <X className="h-4 w-4" />
+              </Button>
+            </DialogHeader>
+
+            <div className="flex-1 overflow-hidden flex flex-col">
+              {/* Problem Description */}
+              <div className="mb-4 p-4 border rounded-md bg-muted/50 overflow-auto max-h-[20vh]">
+                <p>{selectedProblem.description}</p>
+              </div>
+
+              {submissionResult && (
+                <Alert
+                  className={`mb-4 ${
+                    submissionResult.success
+                      ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
+                      : "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800"
+                  }`}
+                >
+                  {submissionResult.success ? (
+                    <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  ) : (
+                    <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                  )}
+                  <AlertTitle>{submissionResult.success ? "Success!" : "Submission Failed"}</AlertTitle>
+                  <AlertDescription>{submissionResult.message}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Code Editor */}
+              <div className="flex-1 flex flex-col min-h-0">
+                <Tabs defaultValue="code" className="flex-1 flex flex-col">
+                  <div className="flex justify-between items-center mb-2">
+                    <TabsList>
+                      <TabsTrigger value="code">Code</TabsTrigger>
+                      <TabsTrigger value="input">Input</TabsTrigger>
+                      <TabsTrigger value="test-cases">Test Cases</TabsTrigger>
+                    </TabsList>
+                    <div className="flex gap-2">
+                      <Button onClick={handleExecute} disabled={isExecuting} size="sm" className="gap-1">
+                        <Play className="h-4 w-4" />
+                        {isExecuting ? "Running..." : "Run Code"}
+                      </Button>
+                      {user && (
+                        <Button onClick={handleSubmit} disabled={isSubmitting} size="sm" className="gap-1">
+                          <Save className="h-4 w-4" />
+                          {isSubmitting ? "Submitting..." : "Submit"}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+
+                  <TabsContent value="code" className="flex-1 flex flex-col mt-0">
+                    <Textarea
+                      value={code}
+                      onChange={(e) => setCode(e.target.value)}
+                      className="flex-1 font-mono text-sm p-4 resize-none min-h-[30vh]"
+                      placeholder="Write your Java code here..."
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="input" className="flex-1 mt-0">
+                    <div className="flex flex-col h-full">
+                      <p className="text-sm text-muted-foreground mb-2">
+                        Enter input values for your program (if needed):
+                      </p>
+                      <Textarea
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        className="flex-1 font-mono text-sm p-4 resize-none min-h-[30vh]"
+                        placeholder="Enter input values here..."
+                      />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="test-cases" className="flex-1 mt-0">
+                    <div className="border rounded-md p-4 min-h-[30vh] overflow-auto">
+                      <pre className="text-sm whitespace-pre-wrap">{selectedProblem.test_cases}</pre>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                <div className="mt-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-sm font-medium">Output</h3>
+                    {executionTime && (
+                      <span className="text-xs text-muted-foreground">Execution time: {executionTime}</span>
+                    )}
+                  </div>
+                  <div className="border rounded-md p-4 bg-muted min-h-[100px] max-h-[150px] overflow-auto">
+                    {executionSuccess !== null && (
+                      <Alert
+                        className={`mb-2 ${
+                          executionSuccess
+                            ? "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800"
+                            : "bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800"
+                        }`}
+                      >
+                        {executionSuccess ? (
+                          <>
+                            <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            <AlertTitle>Success!</AlertTitle>
+                            <AlertDescription>Your code executed successfully.</AlertDescription>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircle className="h-4 w-4 text-red-600 dark:text-red-400" />
+                            <AlertTitle>Execution Failed</AlertTitle>
+                            <AlertDescription>
+                              {executionError || "There was an error executing your code."}
+                            </AlertDescription>
+                          </>
+                        )}
+                      </Alert>
+                    )}
+                    <pre className="text-sm whitespace-pre-wrap font-mono">{output}</pre>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Success Dialog */}
+      <Dialog open={showSuccessDialog} onOpenChange={setShowSuccessDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trophy className="h-5 w-5 text-yellow-500" />
+              Problem Solved!
+            </DialogTitle>
+            <DialogDescription>Congratulations! You've successfully solved this problem.</DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p>Your solution has been saved and added to your profile.</p>
+            {selectedProblem && (
+              <div className="mt-4 p-3 bg-muted rounded-md">
+                <p className="font-medium">Problem: {selectedProblem.title}</p>
+                <p className="text-sm text-muted-foreground">Difficulty: {selectedProblem.difficulty}</p>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={() => {
+                setShowSuccessDialog(false)
+                handleCloseProblem()
+              }}
+            >
+              Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
-}
+      }
