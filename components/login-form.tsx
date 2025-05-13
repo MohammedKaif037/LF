@@ -11,7 +11,12 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import Link from "next/link"
 
-export function LoginForm() {
+interface LoginFormProps {
+  redirectUrl?: string
+  message?: string
+}
+
+export function LoginForm({ redirectUrl, message }: LoginFormProps) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -24,7 +29,7 @@ export function LoginForm() {
     setError(null)
 
     try {
-      const { error } = await signIn(email, password)
+      const { error } = await signIn(email, password, redirectUrl)
       if (error) {
         setError(error.message)
       }
@@ -49,6 +54,13 @@ export function LoginForm() {
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
+
+          {message && (
+            <Alert>
+              <AlertDescription>{message}</AlertDescription>
+            </Alert>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input
