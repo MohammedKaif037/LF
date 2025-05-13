@@ -12,7 +12,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import Link from "next/link"
-import { User } from "lucide-react"
 
 export function UserNav() {
   const { user, signOut } = useAuth()
@@ -32,14 +31,15 @@ export function UserNav() {
     )
   }
 
+  // Get the first letter of the email for the avatar
+  const emailInitial = user.email ? user.email.charAt(0).toUpperCase() : "U"
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarFallback>
-              <User className="h-4 w-4" />
-            </AvatarFallback>
+            <AvatarFallback>{emailInitial}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -47,7 +47,7 @@ export function UserNav() {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{user.email}</p>
-            <p className="text-xs leading-none text-muted-foreground">{user.id}</p>
+            <p className="text-xs leading-none text-muted-foreground">Logged in</p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
