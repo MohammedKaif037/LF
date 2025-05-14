@@ -7,6 +7,19 @@ import { Textarea } from "@/components/ui/textarea"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { CheckCircle, AlertCircle, Play } from "lucide-react"
 
+// Helper function to decode escape sequences in code
+function decodeEscapeSequences(code) {
+  if (!code) return "";
+  
+  // Replace common escape sequences
+  return code
+    .replace(/\\n/g, '\n')
+    .replace(/\\t/g, '\t')
+    .replace(/\\"/g, '"')
+    .replace(/\\'/g, "'")
+    .replace(/\\\\/g, '\\');
+}
+
 interface CodeEditorProps {
   problemId: number
   starterCode: string
@@ -18,7 +31,8 @@ interface CodeEditorProps {
 }
 
 export function CodeEditor({ problemId, starterCode, testCases, onExecute }: CodeEditorProps) {
-  const [code, setCode] = useState(starterCode)
+  // Apply the decode function when initializing state
+  const [code, setCode] = useState(decodeEscapeSequences(starterCode))
   const [input, setInput] = useState("")
   const [output, setOutput] = useState("")
   const [executionTime, setExecutionTime] = useState<string | null>(null)
@@ -26,8 +40,9 @@ export function CodeEditor({ problemId, starterCode, testCases, onExecute }: Cod
   const [executionSuccess, setExecutionSuccess] = useState<boolean | null>(null)
   const [executionError, setExecutionError] = useState<string | null>(null)
 
+  // Also update the useEffect to decode the starter code when it changes
   useEffect(() => {
-    setCode(starterCode)
+    setCode(decodeEscapeSequences(starterCode))
   }, [starterCode])
 
   const handleExecute = async () => {
@@ -51,6 +66,8 @@ export function CodeEditor({ problemId, starterCode, testCases, onExecute }: Cod
       setIsExecuting(false)
     }
   }
+
+  
 
   return (
     <div className="flex flex-col h-full">
