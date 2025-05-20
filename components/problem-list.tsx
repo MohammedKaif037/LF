@@ -353,9 +353,9 @@ export function ProblemList() {
                   <div className="flex justify-between items-center mb-2">
                     <TabsList>
                       <TabsTrigger value="code">Code</TabsTrigger>
-                      <TabsTrigger value="input">Input</TabsTrigger>
-                      <TabsTrigger value="test-cases">Test Cases</TabsTrigger>
+                      <TabsTrigger value="solution">Solution</TabsTrigger>
                     </TabsList>
+
                     <div className="flex gap-2">
                       <Button onClick={handleExecute} disabled={isExecuting} size="sm" className="gap-1">
                         <Play className="h-4 w-4" />
@@ -378,8 +378,14 @@ export function ProblemList() {
                       placeholder="Write your Java code here..."
                     />
                   </TabsContent>
+                  <TabsContent value="solution" className="flex-1 mt-0">
+                    <div className="border rounded-md p-4 bg-muted font-mono text-sm overflow-auto min-h-[30vh]">
+                      <pre>{selectedProblem.solution}</pre>
+                    </div>
+                  </TabsContent>
 
-                  <TabsContent value="input" className="flex-1 mt-0">
+
+                  {/* <TabsContent value="input" className="flex-1 mt-0">
                     <div className="flex flex-col h-full">
                       <p className="text-sm text-muted-foreground mb-2">
                         Enter input values for your program (if needed):
@@ -391,13 +397,13 @@ export function ProblemList() {
                         placeholder="Enter input values here..."
                       />
                     </div>
-                  </TabsContent>
+                  </TabsContent> */}
 
-                  <TabsContent value="test-cases" className="flex-1 mt-0">
+                  {/* <TabsContent value="test-cases" className="flex-1 mt-0">
                     <div className="border rounded-md p-4 min-h-[30vh] overflow-auto">
                       <pre className="text-sm whitespace-pre-wrap">{selectedProblem.test_cases}</pre>
                     </div>
-                  </TabsContent>
+                  </TabsContent> */}
                 </Tabs>
 
                 <div className="mt-4">
